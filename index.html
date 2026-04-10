@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Global Car Price and Pollution Comparison Tool</title>
+    <style>
+        
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 30px; color: #333; }
+        h1 { text-align: center; color: #2c3e50; font-size: 2.5em; margin-bottom: 30px; }
+        .selector-container { display: flex; gap: 15px; margin-bottom: 40px; }
+        .card { flex: 1; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .card strong { display: block; margin-bottom: 10px; font-size: 1.1em; }
+        select { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: white; }
+        .add-btn { width: 100%; margin-top: 15px; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em; }
+        .add-btn:hover { background: #0056b3; }
+        .compare-section { background: #eef9ff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .compare-section h2 { margin-top: 0; color: #0077b6; display: flex; align-items: center; gap: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 15px; }
+        th, td { padding: 18px; border: 1px solid #bde0fe; text-align: center; }
+        th { background: #0096c7; color: white; font-size: 1.1em; }
+        tr:nth-child(even) { background: #f1faff; }
+        .row-label { font-weight: bold; text-align: left; background: #caf0f8; width: 220px; color: #023e8a; }
+    </style>
+</head>
+<body>
+
+    <h1>The Price & Pollution</h1>
+
+    <div class="selector-container">
+        <div class="card" style="background: #ffdbdb;">
+            <strong>① Country</strong>
+            <select id="country">
+                <option value="">-- Choose country --</option>
+                <option value="China">China</option>
+                <option value="USA">USA</option>
+                <option value="Canada">Canada</option>
+            </select>
+        </div>
+
+        <div class="card" style="background: #ffe8d1;">
+            <strong>② Car Type</strong>
+            <select id="carType" onchange="updateBrands()">
+                <option value="">-- Choose type --</option>
+                <option value="Electric">Electric</option>
+                <option value="Gasoline">Gasoline</option>
+                <option value="Mix">Mix</option>
+            </select>
+        </div>
+
+        <div class="card" style="background: #eaffd1;">
+            <strong>③ Brand & Models</strong> 
+            <select id="brand" onchange="updateModels()">
+                <option value="">Choose type first</option>
+            </select>
+            <select id="model">
+                <option value="">Choose brand first</option>
+            </select>
+            <button class="add-btn" onclick="addToCompare()"> Add to compare ➔ </button>
+        </div>
+    </div>
+
+    <div class="compare-section">
+        <h2>Compare</h2>
+        <table id="compareTable">
+            <thead>
+                <tr id="headerRow">
+                    <th class="row-label">Data Points</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr id="priceRow"><td class="row-label">Only Car Price</td></tr>
+                <tr id="gasRow"><td class="row-label">Gasoline Price/km</td></tr>
+                <tr id="powerRow"><td class="row-label">Power Price/month(1200km)+charge station</td></tr>
+                <tr id="taxRow"><td class="row-label">Tax</td></tr>
+                <tr id="polluteProdRow"><td class="row-label">Pollution (Production)
+                    <br><a href="https://www.iea.org/data-and-statistics/data-tools/ev-life-cycle-assessment-calculator" target="_blank" 
+                    style="font-size: 0.85em; font-weight: normal; color: #0077b6; text-decoration: none;">Click to view how to calculate [?]
+                    </a></td></tr>
+                <tr id="polluteUseRow"><td class="row-label">Pollution (During Use)
+                    <details style="font-size: 0.85em; font-weight: normal; margin-top: 5px; color: #0077b6; cursor: pointer;">
+                    <summary>Click to view criteria [?]</summary>
+                    <div style="background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #bde0fe; margin-top: 5px; color: #333; text-align: left;">
+                        <p><strong>Carbon Emission Standards per Kilometer：</strong></p>
+                        <ul style="padding-left: 20px; list-style-type: circle;">
+                            <li><strong>Low (< 100g/km):</strong> For the vast majority of pure electric vehicles (EVs)—even in regions where coal-fired power dominates—the average figure typically remains below 100g.</li>
+                            <li><strong>Med (100g-200g/km):</strong> Hybrid vehicles (Mix) or highly fuel-efficient, small-displacement gasoline vehicles.</li>
+                            <li><strong>High (> 200g/km):</strong> Large gasoline vehicles (Gasoline)，such as the Porsche 911 or large SUVs.</li>
+                        </ul>
+                        <a href="https://app.electricitymaps.com/map" target="_blank" style="color: #0096c7; font-size: 0.9em;">View Real-time Grid Carbon Emissions Globally ➔</a>
+            </div>
+        </details>
+
+
+
+
+                </td></tr>
+                <tr id="gettoknow"><td class="row-label">Get to Know</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        
+        const database = {
+            "Electric": {
+                "Tesla": { 
+                    "Model Y": {
+                        "China": ["¥339,000", "-", "¥118+2,000", "5%", "Med", "High","<a href='https://www.tesla.cn/modely/design?#overview' target='_blank'>more info</a>"],
+                        "USA": ["$40130", "-", "$40+450", "10%", "Med", "High","<a href='https://www.tesla.com/modely/design#overview' target='_blank'>more info</a>"],
+                        "Canada": ["CA$52,000", "-", "CA$30+620", "12%", "Med", "High","<a href='https://www.tesla.com/modely/design#overview' target='_blank'>more info</a>"]
+                    },
+                    "Model 3": {}
+                },
+                "BYD": {
+                    "Seal": {
+                        
+                    }
+                }
+            },
+            "Gasoline": {
+                "Porsche": {
+                    "911Carrera": {
+                        "China": ["¥1,468,000", "¥1.2", "-", "20%", "High", "V.High","<a href='https://models.porsche.com/zh-CN/model-start/911-carrera' target='_blank'>more info</a>"],
+                        "USA": ["$135,500", "$0.11", "-", "10%", "High", "V.High","<a href='https://models.porsche.com/en-us/model-start/911-carrera' target='_blank'>more info</a>"],
+                        "Canada": ["CA$159,322", "CA$0.18", "-", "20%", "High", "V.High","<a href='https://models.porsche.com/en-CA/model-start/911-carrera' target='_blank'>more info</a>"]
+                    }
+                },
+                "BMW":{
+                    "X5":[],
+                    "X7":[]
+                }
+            },
+            "Mix":{
+                "Li Auto":{
+                    "L7":{
+                        "China":["¥301,800","¥0.7","¥152", "0%", "Med", "Med","<a href='https://www.liauto.com/L7' target='_blank'>more info</a>"],
+                        "USA":["$45,000", "$0.08","$43", "6%", "Med", "Med","<a href='https://www.liauto.com/L7' target='_blank'>more info</a>"],
+                        "Canada":["CA$60,000", "CA$0.13","CA$39", "12%", "Med", "Med","<a href='https://www.liauto.com/L7' target='_blank'>more info</a>"]
+                    },
+                    "L9":[]
+                },
+                "Toyota":{
+                    "Camry Hybrid":[],
+                    "Grand Highlander Hybrid":[]
+                }
+            }
+        };
+
+        function updateBrands() {
+            const type = document.getElementById('carType').value;
+            const brandSelect = document.getElementById('brand');
+            brandSelect.innerHTML = '<option value="">-- Choose brand --</option>';
+            if(type && database[type]) {
+                Object.keys(database[type]).forEach(b => brandSelect.add(new Option(b, b)));
+            }
+            updateModels();
+        }
+
+        function updateModels() {
+            const type = document.getElementById('carType').value;
+            const brand = document.getElementById('brand').value;
+            const modelSelect = document.getElementById('model');
+            modelSelect.innerHTML = '<option value="">-- Choose model --</option>';
+            if(type && brand && database[type][brand]) {
+                Object.keys(database[type][brand]).forEach(m => modelSelect.add(new Option(m, m)));
+            }
+        }
+
+        function addToCompare() {
+            const country = document.getElementById('country').value;
+            const type = document.getElementById('carType').value;
+            const brand = document.getElementById('brand').value;
+            const model = document.getElementById('model').value;
+
+            if(!type || !brand || !model) {
+                alert("Please select all options!");
+                return;
+            }
+
+            const modelData = database[type][brand][model];
+            const dataArr = modelData[country];
+
+            if(!dataArr) {
+                alert("No data available for this selection in " + country);
+                return;
+            }
+
+            const headerRow = document.getElementById('headerRow');
+            const th = document.createElement('th');
+            th.innerHTML = brand + " " + model + "<br><small>(" + country + ")</small>";
+            headerRow.appendChild(th);
+
+            appendCell('priceRow', dataArr[0]);
+            appendCell('gasRow', dataArr[1]);
+            appendCell('powerRow', dataArr[2]);
+            appendCell('taxRow', dataArr[3]);
+            appendCell('polluteProdRow', dataArr[4]);
+            appendCell('polluteUseRow', dataArr[5]);
+            appendCell('gettoknow', dataArr[6]);
+        }
+
+        function appendCell(rowId, text) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const cell = row.insertCell(-1);
+            cell.innerHTML = text;
+        }
+    </script>
+</body>
+</html>
